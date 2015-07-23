@@ -6,7 +6,7 @@ package b2f/baselex
 import (
 	"bufio"
 )
-
+// String member for tokName...
 type tokName int
 
 const (
@@ -47,7 +47,7 @@ var reservedTok = map[string]tokName{
 	"WHITESPACE": WHITESPACE,
 }
 
-type token struct {
+type Token struct {
 	name tokName
 	val  string
 }
@@ -60,8 +60,8 @@ func NewLex(b *bufio.Reader) (*lex) {
 	return &lex{b}
 }
 
-func toValidToken(tk token) token {
-	return token{name: reservedTok[tk.val], val: tk.val}
+func toValidToken(tk Token) Token {
+	return Token{name: reservedTok[tk.val], val: tk.val}
 }
 
 func (l *lex) readSpace() (bool) {
@@ -102,14 +102,14 @@ func (l *lex) readLiteral() string {
 	return l.readUntilEnd([]rune{})
 }
 
-func (l *lex) scanIdent() token {
+func (l *lex) scanIdent() Token {
 	//	Better way to write this?
 //	for b := l.readSpace(); b; b = l.readSpace() {
 //	}
-	return token{name: IDENTIFIER, val: l.readLiteral()}
+	return Token{name: IDENTIFIER, val: l.readLiteral()}
 }
 
-func (l *lex) ScanToken() token {
+func (l *lex) ScanToken() Token {
 	bI := l.scanIdent() // Base Identifier. Identifier until proven otherwise
 	return toValidToken(bI)
 }
