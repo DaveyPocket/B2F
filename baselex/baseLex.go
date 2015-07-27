@@ -18,6 +18,7 @@ const (
 	PRINT
 	NEXT
 	TO
+	END
 
 	//	Operators
 	EQU
@@ -30,6 +31,7 @@ const (
 	LNUM
 	QUOTE
 	WHITESPACE
+	NEWLINE
 )
 
 var reservedTok = map[string]tokName{
@@ -45,6 +47,16 @@ var reservedTok = map[string]tokName{
 	"DIV":        DIV,
 	"QUOTE":      QUOTE,
 	"WHITESPACE": WHITESPACE,
+	"END":			END,
+	"NEWLINE":		NEWLINE,
+}
+/*
+func NameToString(tokName) (string) {
+}
+*/
+
+func StringToName(str string) (tokName) {
+	return reservedTok[str]
 }
 
 type Token struct {
@@ -107,6 +119,14 @@ func (l *lex) scanIdent() Token {
 //	for b := l.readSpace(); b; b = l.readSpace() {
 //	}
 	return Token{name: IDENTIFIER, val: l.readLiteral()}
+}
+
+func (t *token) GetName() (tokName) {
+	return t.name
+}
+
+func (t *token) GetVal() (string) {
+	return t.val
 }
 
 func (l *lex) ScanToken() Token {

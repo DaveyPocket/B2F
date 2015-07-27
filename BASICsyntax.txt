@@ -1,0 +1,87 @@
+1. IF statement
+
+Usage:
+IF <condition> THEN <statement>
+ENDIF
+
+Notes:
+<condition> is some form of expression returning a boolean true or false.
+-Possible operators for expression can be:
+= (Equal)
+> (Greater than)
+< (Less than)
+>= (Greater than or equal to)
+<= (Less than or equal to)
+
+2. PRINT statement
+
+Usage:
+PRINT <variable>
+
+Notes:
+Prints number on screen.
+Intermediate goal - Only support printing byte to screen as a byte is the basic unit of BF machine storage.
+
+3. FOR loop
+
+Usage:
+FOR <variable> = n to m
+.
+.
+NEXT <variable>
+
+Notes:
+Creates a for loop iterating (m - n) + 1 times.
+NEXT keyword is used to identify the ending block of a for loop.
+
+4. LET statement
+
+Usage:
+LET <variable> = <expression>
+
+Notes:
+Expression in this case could be a constant number, a variable, or an expression itself.
+
+5. DO-LOOP
+(Need clarification on this)
+
+6. END statement
+
+Usage:
+END
+
+Notes:
+End execution of a program.
+
+7. GOTO statement
+
+Usage:
+GOTO <line-number>
+
+Notes:
+Branches program execution to another location specified by the line number. DOES NOT place anything on the "call-stack".
+
+8. GOSUB statement
+
+Usage:
+GOSUB <line-number>
+
+Notes:
+Calls a subroutine specified by the line number.
+
+9. RETURN statement
+
+Usage:
+RETURN
+
+Notes:
+Specifies the end of a subroutine. Returns to the line number GOSUB was called from.
+
+10. INPUT statement
+
+Usage:
+<variable> = INPUT
+
+Notes:
+Returns input from keyboard.
+-Different usage for strings and integer types.... Needs clarification

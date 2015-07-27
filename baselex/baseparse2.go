@@ -35,13 +35,22 @@ func buildNode() (node) {
 }
 
 func nodeBuilder(t *lexer.Token) (node) {
-	n := &node{}
 	switch t.GetName() {
 	case baselex.StringToName("IDENT"):
-		n = nodeBuilder(t)
+		n := nodeBuilder(getToken())
+		switch n.What() {
+		case 1:
+			//	Token cannot be a node
+			n.lVal = t
+		case -1:
+			return 
+		}
 	case baselex.StringToName("EQU"):
-		return node{tok: t}
+		return equ{rVal: nodeBuilder(getToken())}
+	case baselex.StringToName("NEWLINE"):
+		return newLine
 	}
+
 }
 /*
 func buildNode() (node) {
@@ -57,6 +66,23 @@ func buildNode() (node) {
 
 }
 */
+
+type ident lexer.Token
+
+type equ struct {
+	lVal,	rVal	node
+}
+
+type newLine struct {}
+
+func (e equ) What() (int) {
+	return 1
+}
+
+func (n newLine) What() (int() {
+	return -1
+}
+
 type parser struct {
 	//	some root node for AST
 	//	Current token to do things to?
@@ -64,11 +90,8 @@ type parser struct {
 	*program
 }
 
-
-type node struct {
-	//	Node contain
-	tok	baselex.Token	//	Could an interface go into here somehow?
-	children	[]node
+type node interface{
+	what() (int)
 }
 
 type program []node	// Root node of the program
