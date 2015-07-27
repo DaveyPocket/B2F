@@ -1,4 +1,4 @@
-package b2f/baselex
+package baselex
 
 import ("testing"
 			"fmt"

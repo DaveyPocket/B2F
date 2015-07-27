@@ -1,7 +1,7 @@
 /*
 	This package performs Lexical Analysis for BASIC
 */
-package b2f/baselex
+package baselex
 
 import (
 	"bufio"
@@ -32,6 +32,15 @@ const (
 	QUOTE
 	WHITESPACE
 	NEWLINE
+
+	// Things
+	OPENPAREN
+	CLOSEPAREN
+	OPENSQUAREBRACKET
+	CLOSESQUAREBRACKET
+	OPENBRACKET
+	CLOSEBRACKET
+	EOF
 )
 
 var reservedTok = map[string]tokName{
@@ -40,15 +49,16 @@ var reservedTok = map[string]tokName{
 	"PRINT":      PRINT,
 	"NEXT":       NEXT,
 	"TO":         TO,
-	"EQU":        EQU,
-	"ADD":        ADD,
-	"SUB":        SUB,
-	"MUL":        MUL,
-	"DIV":        DIV,
-	"QUOTE":      QUOTE,
-	"WHITESPACE": WHITESPACE,
+	"=":        EQU,
+	"+":        ADD,
+	"-":        SUB,
+	"*":        MUL,
+	"/":        DIV,
+	"\"":      QUOTE,
+	" ":			WHITESPACE,
 	"END":			END,
-	"NEWLINE":		NEWLINE,
+	"\n":		NEWLINE,
+	"":		EOF,
 }
 /*
 func NameToString(tokName) (string) {
@@ -64,24 +74,29 @@ type Token struct {
 	val  string
 }
 
-type lex struct {
+type Lex struct {
 	b *bufio.Reader
 }
 
-func NewLex(b *bufio.Reader) (*lex) {
-	return &lex{b}
+func NewLex(b *bufio.Reader) (*Lex) {
+	return &Lex{b}
 }
 
 func toValidToken(tk Token) Token {
 	return Token{name: reservedTok[tk.val], val: tk.val}
 }
 
-func (l *lex) readSpace() (bool) {
+func (l *Lex) read() (rune) {
 	r, _, err := l.b.ReadRune()
 	if err != nil {
-		panic(err)
+		//panic(err)
+		r = rune(0)
 	}
+	return r
+}
 
+func (l *Lex) readSpace() (bool) {
+	r := l.read()
 	if r != ' ' {
 		l.b.UnreadRune()
 		return false
@@ -90,15 +105,12 @@ func (l *lex) readSpace() (bool) {
 	return true
 }
 
-func (l *lex) readSpaces() {
+func (l *Lex) readSpaces() {
 	for l.readSpace() {}
 }
-func (l *lex) readUntilEnd(m []rune) string {
+func (l *Lex) readUntilEnd(m []rune) string {
 	// Read space must go in here
-	r, _, err := l.b.ReadRune()
-	if err != nil {
-		panic(err)
-	}
+	r := l.read()
 
 	if r != ' ' && r != '\n' && r != rune(0) {
 		m = append(m, r)
@@ -109,27 +121,27 @@ func (l *lex) readUntilEnd(m []rune) string {
 	return string(m)
 }
 
-func (l *lex) readLiteral() string {
+func (l *Lex) readLiteral() string {
 	l.readSpaces()
 	return l.readUntilEnd([]rune{})
 }
 
-func (l *lex) scanIdent() Token {
+func (l *Lex) scanIdent() Token {
 	//	Better way to write this?
 //	for b := l.readSpace(); b; b = l.readSpace() {
 //	}
 	return Token{name: IDENTIFIER, val: l.readLiteral()}
 }
 
-func (t *token) GetName() (tokName) {
+func (t *Token) GetName() (tokName) {
 	return t.name
 }
 
-func (t *token) GetVal() (string) {
+func (t *Token) GetVal() (string) {
 	return t.val
 }
 
-func (l *lex) ScanToken() Token {
+func (l *Lex) ScanToken() Token {
 	bI := l.scanIdent() // Base Identifier. Identifier until proven otherwise
 	return toValidToken(bI)
 }

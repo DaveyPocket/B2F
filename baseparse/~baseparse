@@ -31,7 +31,6 @@ func buildAST() {
 }
 
 func buildNode() (node) {
-	
 }
 
 func nodeBuilder(t *lexer.Token) (node) {
@@ -41,9 +40,9 @@ func nodeBuilder(t *lexer.Token) (node) {
 		switch n.What() {
 		case 1:
 			//	Token cannot be a node
-			n.lVal = t
+			n.lVal = // Something....
 		case -1:
-			return 
+			return
 		}
 	case baselex.StringToName("EQU"):
 		return equ{rVal: nodeBuilder(getToken())}
@@ -66,6 +65,12 @@ func buildNode() (node) {
 
 }
 */
+
+type node struct {
+	token			lexer.Token
+	children		[]node
+}
+
 
 type ident lexer.Token
 
@@ -121,3 +126,5 @@ type let struct {
 	lVal		node	//Variable type???
 	rVal		node	//Expression type??
 }
+
+// Label

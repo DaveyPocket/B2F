@@ -1,4 +1,4 @@
-package b2f/baseparse
+package baseparse
 // BASIC to BF parser
 
 import (
@@ -8,60 +8,48 @@ import (
 		"bufio"
 )
 
-func getToken() (token) {
-	return baselex.ScanToken()
+func (p parser) scan() (baselex.Token) {
+	return p.lex.ScanToken()
 }
 
-func getTokName() {
+func (p parser) buildTree() (*program) {
+	// TODO: Change return type to pointer to a program
+	prg := &program{}
+	m := p.treeBuilder(&node{})
+	//fmt.Printf("%+v\n", *m)
+	*prg = append(*prg, *m)
+	return prg
+}
 
+func (p parser) treeBuilder(n *node) (*node) {
+	m := n
+	t := p.scan()
+	fmt.Println(t)
+	switch t.GetName() {
+	case baselex.StringToName("IDENTIFIER"):
+		m = p.treeBuilder(&node{tok: t})
+	case baselex.StringToName("="), baselex.StringToName("+"), baselex.StringToName("-"), baselex.StringToName("*"), baselex.StringToName("/"):
+		// Desired root node
+		root := &node{tok: t}
+		root.children = append(root.children, *n, *p.treeBuilder(root))
+		return root
+	}
+	return m
 }
 
 func Parse(r io.Reader) {
-	lexer := NewLex(bufio.NewReader(r))
-	buildAST()
-
+	p := &parser{lex: baselex.NewLex(bufio.NewReader(r))}
+	// Loop through multiple branches to build program
+	p.prog = p.buildTree()
+	fmt.Println("Program:", *p.prog)
 }
 
-func buildAST() {
-	//	Loop until a token with the END keyword is found
-	for /*!end*/ {
-		n := buildNode()
-
-	}
-}
-
-func buildNode() (node) {
-	
-}
-
-func nodeBuilder(t *lexer.Token) (node) {
-	n := &node{}
-	switch t.GetName() {
-	case baselex.StringToName("IDENT"):
-		n = nodeBuilder(t)
-	case baselex.StringToName("EQU"):
-		return node{tok: t}
-	}
-}
-/*
-func buildNode() (node) {
-	n := &node{}
-	for tok := getToken(); tok.GetName() != baselex.StringToName("NEWLINE"); tok = getToken() {
-		switch tok.GetName(){
-		case baselex.StringToName("EQU"):
-			//	Now that we have entered the EQU case, need to follow a set of rules to build node
-			n.tok = tok
-			n
-		}
-	}
-
-}
-*/
 type parser struct {
+	lex *baselex.Lex
 	//	some root node for AST
 	//	Current token to do things to?
 	//	First - What does the structure of a node look like?
-	*program
+	prog *program
 }
 
 
@@ -74,16 +62,16 @@ type node struct {
 type program []node	// Root node of the program
 
 func (p *program) add(t baselex.Token) {
-	p = append(p, node)// Might not work....
+//	p = append(p, node)// Might not work....
 	//	Can items be appended to a slice even if the member receiver is of pointer type?
 }
 
 func (n *node) add(t baselex.Token) {
-	n.children = append(n.children, node)// Might not work.....
+//	n.children = append(n.children, node)// Might not work.....
 }
 
 type adder interface {
-	add(t baselex.token)
+	add(t baselex.Token)
 }
 
 // Part of the semantics phase???
