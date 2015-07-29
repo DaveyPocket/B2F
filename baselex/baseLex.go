@@ -5,6 +5,7 @@ package baselex
 
 import (
 	"bufio"
+	"strings"
 )
 // String member for tokName...
 type tokName int
@@ -83,7 +84,7 @@ func NewLex(b *bufio.Reader) (*Lex) {
 }
 
 func toValidToken(tk Token) Token {
-	return Token{name: reservedTok[tk.val], val: tk.val}
+	return Token{name: reservedTok[strings.ToUpper(tk.val)], val: tk.val}
 }
 
 func (l *Lex) read() (rune) {
@@ -112,12 +113,18 @@ func (l *Lex) readUntilEnd(m []rune) string {
 	// Read space must go in here
 	r := l.read()
 
+	// Code until * can be made compact and not so if-y
+	if len(m) == 0 && r == '\n' {
+		return string(r)
+	}
+
 	if r != ' ' && r != '\n' && r != rune(0) {
 		m = append(m, r)
 		return l.readUntilEnd(m)
 	}
+	//*
 
-	//l.b.UnreadRune()
+	l.b.UnreadRune()
 	return string(m)
 }
 
@@ -133,11 +140,11 @@ func (l *Lex) scanIdent() Token {
 	return Token{name: IDENTIFIER, val: l.readLiteral()}
 }
 
-func (t *Token) GetName() (tokName) {
+func (t Token) GetName() (tokName) {
 	return t.name
 }
 
-func (t *Token) GetVal() (string) {
+func (t Token) GetVal() (string) {
 	return t.val
 }
 

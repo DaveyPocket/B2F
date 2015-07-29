@@ -12,12 +12,25 @@ func (p parser) scan() (baselex.Token) {
 	return p.lex.ScanToken()
 }
 
-func (p parser) buildTree() (*program) {
-	// TODO: Change return type to pointer to a program
-	prg := &program{}
+func getDelim(n []node) (node) {
+	return n[len(n) - 1]
+}
+
+func (p parser) getLines() (lines []node) {
 	m := p.treeBuilder(&node{})
-	//fmt.Printf("%+v\n", *m)
-	*prg = append(*prg, *m)
+	for ; !m.isDelim(); m = p.treeBuilder(&node{}) {
+		lines = append(lines, *m)
+	}
+	lines = append(lines, *m)
+	return
+}
+
+func (p parser) buildTree() (*program) {
+	prg := &program{}
+	*prg = append(*prg, p.getLines()...)
+	if !getDelim(*prg).isEOF() {
+		fmt.Println("Expected <EOF>, found", getDelim(*prg).tok.GetVal(), "instead.")
+	}
 	return prg
 }
 
@@ -28,11 +41,73 @@ func (p parser) treeBuilder(n *node) (*node) {
 	switch t.GetName() {
 	case baselex.StringToName("IDENTIFIER"):
 		m = p.treeBuilder(&node{tok: t})
-	case baselex.StringToName("="), baselex.StringToName("+"), baselex.StringToName("-"), baselex.StringToName("*"), baselex.StringToName("/"):
+	case baselex.StringToName("="):
 		// Desired root node
 		root := &node{tok: t}
-		root.children = append(root.children, *n, *p.treeBuilder(root))
+		root.children = append(root.children, *n, *p.assignmentBuilder(root))
 		return root
+	case baselex.StringToName("LET"):
+		root := &node{tok: t}
+		root.children = append(root.children, *p.treeBuilder(root))
+		return root
+	//case baselex.StringToName("PRINT"):
+	case baselex.StringToName("FOR"):
+		root := &node{tok: t}
+		root.children = append(root.children, *p.treeBuilder(root))	//	Append conditional to leftmost branch
+		root.children = append(root.children, p.getLines()...) // Append statements to not-leftmost branch
+		return root
+	case baselex.StringToName("END"):
+		return &node{tok: t}
+	case baselex.StringToName(""):
+		return &node{tok: t}
+	case baselex.StringToName("NEXT"):
+		return &node{tok: t}
+	}
+	return m
+}
+
+func (p parser) forBuilder(n *node) (*node) {
+	m := n
+	t := p.scan()
+	fmt.Println(t)
+	switch t.GetName() {
+	case baselex.StringToName("IDENTIFIER"):
+		m = p.treeBuilder(&node{tok: t})
+	case baselex.StringToName("="):
+		// Desired root node
+		root := &node{tok: t}
+		root.children = append(root.children, *n, *p.assignmentBuilder(root))
+		return root
+	case baselex.StringToName("LET"):
+		// return &node{tok: t, children: &node{*p.treeBuilder(root)}}
+		root := &node{tok: t}
+		root.children = append(root.children, *p.treeBuilder(root))
+		return root
+	//case baselex.StringToName("PRINT"):
+	case baselex.StringToName("FOR"):
+		root := &node{tok: t}
+		root.children = append(root.children, *p.treeBuilder(root), *p.forBuilder(root))
+		return root
+	case baselex.StringToName(""):
+		panic("Unbalanced FOR-LOOP")
+	}
+	return m
+}
+
+func (p parser) assignmentBuilder(n *node) (*node) {
+	m := n
+	t := p.scan()
+	fmt.Println(t)
+	switch t.GetName() {
+	case baselex.StringToName("IDENTIFIER"):
+		m = p.assignmentBuilder(&node{tok: t})
+	case baselex.StringToName("+"), baselex.StringToName("-"), baselex.StringToName("*"), baselex.StringToName("/"), baselex.StringToName("TO"):
+		// Desired root node
+		root := &node{tok: t}
+		root.children = append(root.children, *n, *p.assignmentBuilder(root))
+		return root
+	case baselex.StringToName("="):
+		panic("Double assignment")
 	}
 	return m
 }
@@ -57,6 +132,22 @@ type node struct {
 	//	Node contain
 	tok	baselex.Token	//	Could an interface go into here somehow?
 	children	[]node
+}
+
+func (n node) isEOF() (bool) {
+	return n.tok.GetName() == baselex.StringToName("")
+}
+
+func (n node) isNext() (bool) {
+	return n.tok.GetName() == baselex.StringToName("NEXT")
+}
+
+func (n node) isEndIf() (bool) {
+	return n.tok.GetName() == baselex.StringToName("ENDIF")
+}
+
+func (n node) isDelim() (bool) {
+	return n.isEndIf() || n.isEOF() || n.isNext()
 }
 
 type program []node	// Root node of the program
