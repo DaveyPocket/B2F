@@ -1,8 +1,0 @@
-LET A = 5
-gosub label
-end
-label:
-PRINT A
-return
-
-

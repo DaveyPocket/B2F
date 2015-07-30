@@ -19,7 +19,13 @@ const (
 	PRINT
 	NEXT
 	TO
+	IF
+	THEN
+	ELSE
+	ENDIF
 	END
+	GOTO
+	GOSUB
 
 	//	Operators
 	EQU
@@ -27,12 +33,16 @@ const (
 	SUB
 	MUL
 	DIV
+	MOD
 
 	//	Expressives
+	LABEL
 	LNUM
 	QUOTE
 	WHITESPACE
 	NEWLINE
+	COLON
+	EOF
 
 	// Things
 	OPENPAREN
@@ -41,7 +51,6 @@ const (
 	CLOSESQUAREBRACKET
 	OPENBRACKET
 	CLOSEBRACKET
-	EOF
 )
 
 var reservedTok = map[string]tokName{
@@ -58,6 +67,13 @@ var reservedTok = map[string]tokName{
 	"\"":      QUOTE,
 	" ":			WHITESPACE,
 	"END":			END,
+	"ENDIF":			ENDIF,
+	"IF":				IF,
+	"ELSE":			ELSE,
+	"THEN":			THEN,
+	"GOTO":			GOTO,
+	"GOSUB":			GOSUB,
+	"%":			MOD,
 	"\n":		NEWLINE,
 	"":		EOF,
 }
@@ -87,28 +103,41 @@ func toValidToken(tk Token) Token {
 	return Token{name: reservedTok[strings.ToUpper(tk.val)], val: tk.val}
 }
 
+// read reads a rune from the buffer and returns said rune.
+//	If the end of the buffer as been reached, return EOF.
 func (l *Lex) read() (rune) {
 	r, _, err := l.b.ReadRune()
 	if err != nil {
-		//panic(err)
 		r = rune(0)
 	}
 	return r
 }
 
+//	isWhiteSpace returns true if the rune argument is a whitespace or
+// horizontal tab.
+func isWhitespace(r rune) (bool) {
+	return r == ' ' || r == '\t'
+}
+
+//	readSpace reads a single whitespace - freeing it from the buffer.
+//	Frees rune from buffer until non-whitespace character found.
 func (l *Lex) readSpace() (bool) {
-	r := l.read()
-	if r != ' ' {
-		l.b.UnreadRune()
-		return false
+	r := l.read()				//	Read a rune.
+	if !isWhitespace(r) {
+		l.b.UnreadRune()		//	Put character back if it is not a whitespace.
+		return false			//	Thing just read is not a space.
 	}
 
 	return true
 }
 
+// readSpaces calls readSpace repeatedly until a non-whitespace is found.
+//	Useful for freeing tabs and spaces used for formatting program.
 func (l *Lex) readSpaces() {
-	for l.readSpace() {}
+	for l.readSpace() {}		//	Eat spaces and tabs until character.
 }
+
+//	readUntilEnd reads a sequence of characters recursively until a whitespace character is found.
 func (l *Lex) readUntilEnd(m []rune) string {
 	// Read space must go in here
 	r := l.read()
@@ -118,7 +147,8 @@ func (l *Lex) readUntilEnd(m []rune) string {
 		return string(r)
 	}
 
-	if r != ' ' && r != '\n' && r != rune(0) {
+	// isWhitespace
+	if !isWhitespace(r) && r != '\n' && r != rune(0) {
 		m = append(m, r)
 		return l.readUntilEnd(m)
 	}
@@ -128,26 +158,32 @@ func (l *Lex) readUntilEnd(m []rune) string {
 	return string(m)
 }
 
+//	readLiteral returns a whitespace delimited string of text.
+//	Intended for placing values into lexical tokens.
 func (l *Lex) readLiteral() string {
 	l.readSpaces()
 	return l.readUntilEnd([]rune{})
 }
 
+//	scanIdent returns an identifier token with value assigned to string literal read
+// from buffer.
 func (l *Lex) scanIdent() Token {
-	//	Better way to write this?
-//	for b := l.readSpace(); b; b = l.readSpace() {
-//	}
 	return Token{name: IDENTIFIER, val: l.readLiteral()}
 }
 
+//	GetName returns the name of the token.
 func (t Token) GetName() (tokName) {
 	return t.name
 }
 
+//	GetVal returns the value of the token.
 func (t Token) GetVal() (string) {
 	return t.val
 }
 
+//	ScanToken grabs the next lexical token from the buffer.
+//	It first assumes that the token is an identifier - if the identifier
+// just so happens to be another type, it changes it accordingly.
 func (l *Lex) ScanToken() Token {
 	bI := l.scanIdent() // Base Identifier. Identifier until proven otherwise
 	return toValidToken(bI)

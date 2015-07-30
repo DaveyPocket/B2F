@@ -1,3 +1,15 @@
-let B = 0 + 5
-LET Q = 5
-NEXT
+			let myNum = 0
+
+
+
+
+for it = 0 to 19
+myNum = myNum + it
+if myNum < 2 then
+print myNum
+endif
+next it
+
+print myNum
+
+end
