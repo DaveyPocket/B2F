@@ -1,8 +1,4 @@
-			let myNum = 0
-
-
-
-
+let myNum = 0
 for it = 0 to 19
 myNum = myNum + it
 if myNum < 2 then

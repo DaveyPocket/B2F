@@ -26,8 +26,8 @@ func (p parser) getLines() (lines []node) {
 	return
 }
 
-func (p parser) buildTree() (*program) {
-	prg := &program{}
+func (p parser) buildTree() (*Program) {
+	prg := &Program{}
 	*prg = append(*prg, p.getLines()...)
 	if !getDelim(*prg).isEOF() && !getDelim(*prg).isEnd() {
 		fmt.Println("Expected <EOF>, found", getDelim(*prg).tok.GetVal(), "instead.")
@@ -112,11 +112,12 @@ func (p parser) assignmentBuilder(n *node) (*node) {
 	return m
 }
 
-func Parse(r io.Reader) {
+func Parse(r io.Reader) (*Program) {
 	p := &parser{lex: baselex.NewLex(bufio.NewReader(r))}
 	// Loop through multiple branches to build program
 	p.prog = p.buildTree()
 	fmt.Println("Program:", *p.prog)
+	return p.prog
 }
 
 type parser struct {
@@ -124,9 +125,8 @@ type parser struct {
 	//	some root node for AST
 	//	Current token to do things to?
 	//	First - What does the structure of a node look like?
-	prog *program
+	prog *Program
 }
-
 
 type node struct {
 	//	Node contain
@@ -166,9 +166,9 @@ func (n node) isDelim() (bool) {
 	return n.isEndIf() || n.isEOF() || n.isNext() || n.isEnd() || n.isThen() || n.isElse() || n.isNewline()
 }
 
-type program []node	// Root node of the program
+type Program []node	// Root node of the program
 
-func (p *program) add(t baselex.Token) {
+func (p *Program) add(t baselex.Token) {
 //	p = append(p, node)// Might not work....
 	//	Can items be appended to a slice even if the member receiver is of pointer type?
 }
@@ -193,3 +193,46 @@ type let struct {
 	lVal		node	//Variable type???
 	rVal		node	//Expression type??
 }
+
+//	GetVariables traverses the program tree and returns the number
+// of variables found in the program along with a slice of pointers
+//	to nodes
+//	corresponding to the order in which they appear in the program.
+func (p *Program) GetVariables() (count int, n []*node) {
+	for _, child := range *p {
+		if isVar(child) {
+			count++
+			n = append(n, &child.children[0])//REALLY BAD
+		}
+	}
+	//	For p.children != END node
+	//		Traverse
+	// Call some recursive function
+	return
+}
+
+func isVar(n node) (bool) {
+	return n.tok.GetName() == baselex.StringToName("LET")
+}
+
+func (n node) GetTokVal() (string) {
+	return n.tok.GetVal()
+}
+
+func (n node) GetChild(i int) (node) {
+	return n.children[i]
+}
+
+//	Recursive Variable finder
+//	What constitutes a variable?
+//		Any literal on the left-hand side of an assignment...
+//		Any literal on the left-hand side of an assignment in a for loop
+
+//	What goes into the variable?
+
+
+/* TODO
+Symbol table.
+Second-pass to create detailed tokens (token values reflect type)
+
+*/
