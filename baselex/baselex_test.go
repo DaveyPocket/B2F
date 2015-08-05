@@ -1,11 +1,43 @@
 package baselex
 
-import ("testing"
-			"fmt"
-			"strings"
-			"bufio"
-		)
+import (
+	"bufio"
+	"fmt"
+	"testing"
+	"os"
+)
 
+func TestMain(m *testing.M) {
+	f, err := os.Open("testcase.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	if len(reservedTok) < int(THISGOESLAST) {
+		panic("Missing map entry for token name.")
+	} else if len(reservedTok) > int(THISGOESLAST) {
+		panic("Missing token name for mapped entry.")
+	}
+
+	SetReader(bufio.NewReader(f))
+	os.Exit(m.Run())
+}
+
+func TestStringToName(t *testing.T) {
+	fmt.Println(StringToName("THEN"))
+}
+
+func TestReadToken(t *testing.T) {
+	var tk Token
+	fmt.Println("EOF number is:", EOF)
+	tk = ReadToken()
+	for !isEOF(tk) {
+		fmt.Println(tk)
+		tk = ReadToken()
+	}
+}
+
+/*
 func TestToValidToken(t *testing.T) {
 	fmt.Println(toValidToken(token{IDENTIFIER, "FOR"}))
 }
@@ -65,3 +97,4 @@ func TestScanToken(t *testing.T) {
 		fmt.Println(l.ScanToken())
 	}
 }
+*/

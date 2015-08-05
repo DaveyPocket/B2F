@@ -1,0 +1,25 @@
+mode: set
+b2f/baselex/baselex.go:12.33,14.2 1 1
+b2f/baselex/baselex.go:100.39,102.2 1 1
+b2f/baselex/baselex.go:111.34,113.2 1 0
+b2f/baselex/baselex.go:116.35,118.2 1 1
+b2f/baselex/baselex.go:122.26,124.16 2 1
+b2f/baselex/baselex.go:127.2,127.10 1 1
+b2f/baselex/baselex.go:124.16,126.3 1 1
+b2f/baselex/baselex.go:130.20,132.2 1 1
+b2f/baselex/baselex.go:136.32,138.2 1 1
+b2f/baselex/baselex.go:140.27,142.2 1 0
+b2f/baselex/baselex.go:146.23,148.22 2 1
+b2f/baselex/baselex.go:152.2,152.13 1 1
+b2f/baselex/baselex.go:148.22,151.3 2 1
+b2f/baselex/baselex.go:157.20,158.18 1 1
+b2f/baselex/baselex.go:158.18,159.3 0 1
+b2f/baselex/baselex.go:164.37,169.30 2 1
+b2f/baselex/baselex.go:174.2,174.51 1 1
+b2f/baselex/baselex.go:180.2,181.18 2 1
+b2f/baselex/baselex.go:169.30,171.3 1 1
+b2f/baselex/baselex.go:174.51,177.3 2 1
+b2f/baselex/baselex.go:186.26,189.2 2 1
+b2f/baselex/baselex.go:193.29,195.2 1 1
+b2f/baselex/baselex.go:197.35,199.2 1 1
+b2f/baselex/baselex.go:204.24,206.2 1 1

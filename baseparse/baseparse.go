@@ -46,6 +46,7 @@ func (p parser) treeBuilder(n *node) (*node) {
 	case baselex.StringToName("="):
 		// Desired root node
 		root.children = append(root.children, *n, *p.assignmentBuilder(root))
+		p.symbol = append(p.symbol, symbol{root.children[0].tok.GetVal(), root.children[1].tok.GetVal()})
 		return root
 	case baselex.StringToName("LET"):
 		root.children = append(root.children, *p.treeBuilder(root))
@@ -120,12 +121,26 @@ func Parse(r io.Reader) (*Program) {
 	return p.prog
 }
 
+type symbol struct {
+	name	string
+	value	interface{}
+}
+
+func (s symbol) GetVal() (interface{}) {
+	return s.value
+}
+
+func (s symbol) GetName() (string) {
+	return s.name
+}
+
 type parser struct {
 	lex *baselex.Lex
 	//	some root node for AST
 	//	Current token to do things to?
 	//	First - What does the structure of a node look like?
 	prog *Program
+	symbol []symbol
 }
 
 type node struct {
@@ -168,47 +183,12 @@ func (n node) isDelim() (bool) {
 
 type Program []node	// Root node of the program
 
-func (p *Program) add(t baselex.Token) {
-//	p = append(p, node)// Might not work....
-	//	Can items be appended to a slice even if the member receiver is of pointer type?
-}
-
-func (n *node) add(t baselex.Token) {
-//	n.children = append(n.children, node)// Might not work.....
-}
-
-type adder interface {
-	add(t baselex.Token)
-}
-
-// Part of the semantics phase???
-type forLoop struct {
-	//	Condition should only contain some form of expression?
-	condition	node
-	statements	[]node
-}
-
-//	leaf
-type let struct {
-	lVal		node	//Variable type???
-	rVal		node	//Expression type??
-}
-
 //	GetVariables traverses the program tree and returns the number
 // of variables found in the program along with a slice of pointers
 //	to nodes
 //	corresponding to the order in which they appear in the program.
-func (p *Program) GetVariables() (count int, n []*node) {
-	for _, child := range *p {
-		if isVar(child) {
-			count++
-			n = append(n, &child.children[0])//REALLY BAD
-		}
-	}
-	//	For p.children != END node
-	//		Traverse
-	// Call some recursive function
-	return
+func (p *Program) GetSymTable() (int, []symbol) {
+	return len(p.symbol), p.symbol
 }
 
 func isVar(n node) (bool) {
