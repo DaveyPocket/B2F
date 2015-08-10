@@ -1,3 +1,5 @@
+//	Global variable declaration during runtime.
+//	No need to keep initial value in the symbol table.
 /* Notes
 DO NOT manually keep track of memory pointer. Let the Code Generator perform those operations.
 */

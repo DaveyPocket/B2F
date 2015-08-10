@@ -1,3 +1,4 @@
+//	Basically F*cked
 package baseparse
 // BASIC to BF parser
 
@@ -17,6 +18,7 @@ func getDelim(n []node) (node) {
 	return n[len(n) - 1]
 }
 
+//	GetStatements
 func (p parser) getLines() (lines []node) {
 	m := p.treeBuilder(&node{}) // Get a node from the treeBuilder
 	for ; !m.isDelim(); m = p.treeBuilder(&node{}) {
@@ -42,7 +44,7 @@ func (p parser) treeBuilder(n *node) (*node) {
 	root := &node{tok: t}
 	switch t.GetName() {
 	case baselex.StringToName("IDENTIFIER"):
-		n = p.treeBuilder(&node{tok: t})
+		n = p.treeBuilder(root)
 	case baselex.StringToName("="):
 		// Desired root node
 		root.children = append(root.children, *n, *p.assignmentBuilder(root))

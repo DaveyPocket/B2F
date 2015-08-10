@@ -5,7 +5,11 @@ if myNum < 2 then
 print myNum
 endif
 next it
-
-print myNum
+next a
 
 end
+
+
+myFunc:
+//doAThing
+return
