@@ -25,6 +25,8 @@ type condType struct {
 type forType struct {
 }
 
+//	No need for a bookshelf type
+//	There only needs to exist one code generator a moment in time.
 type bookShelf struct {
 	AST          *baseparse.Program
 	Pointer      int

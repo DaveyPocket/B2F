@@ -13,11 +13,11 @@ func SetReader(b *bufio.Reader) {
 	buf = b
 }
 
-//	tokName represents the name of a token
-type tokName int
+//	TokName represents the name of a token
+type TokName int
 
 const (
-	IDENTIFIER tokName = iota
+	IDENTIFIER TokName = iota
 
 	//	Keywords
 	LET
@@ -62,7 +62,7 @@ const (
 	THISGOESLAST
 )
 
-var reservedTok = map[string]tokName{
+var reservedTok = map[string]TokName{
 	"LET":    LET,
 	"FOR":    FOR,
 	"PRINT":  PRINT,
@@ -85,36 +85,40 @@ var reservedTok = map[string]tokName{
 	"GOSUB":  GOSUB,
 	"%":      MOD,
 	"\n":     NEWLINE,
-	":":		COLON,
+	":":      COLON,
 	"":       EOF,
-	"(":		OPENPAREN,
-	")":		CLOSEPAREN,
-	"[":		OPENSQUAREBRACKET,
-	"]":		CLOSESQUAREBRACKET,
-	"{":		OPENBRACKET,
-	"}":		CLOSEBRACKET,
-	"⾨":		THISGOESLAST,
+	"(":      OPENPAREN,
+	")":      CLOSEPAREN,
+	"[":      OPENSQUAREBRACKET,
+	"]":      CLOSESQUAREBRACKET,
+	"{":      OPENBRACKET,
+	"}":      CLOSEBRACKET,
+	"⾨":      THISGOESLAST,
 }
 
 //	StringToName converts a string to a token name if the string matches the name of a token.
-func StringToName(str string) tokName {
+func StringToName(str string) TokName {
 	return reservedTok[str]
 }
 
 //	Token is a struct that defines a lexical token.
 type Token struct {
-	name   tokName
+	name   TokName
 	lexeme string
 }
 
 //	GetName returns the name of the token.
-func (t Token) GetName() tokName {
+func (t Token) GetName() TokName {
 	return t.name
 }
 
 //	GetVal returns the value of the token.
 func (t Token) GetLexeme() string {
 	return t.lexeme
+}
+
+func (t Token) IsEOF() bool {
+	return t.name == EOF && t.val == ""
 }
 
 // readNextChar reads a rune from the buffer and returns said rune.
@@ -142,7 +146,7 @@ func isParen(r rune) bool {
 }
 
 func isLetter(r rune) bool {
-	return ( r >= 'a' && r <= 'z' ) || ( r >= 'A' && r <= 'Z' )
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
 
 func isNumber(r rune) bool {
@@ -150,13 +154,14 @@ func isNumber(r rune) bool {
 }
 
 //	TODO - Remove isEOF or only check rune type
-func isEOF(tk Token) bool	{
+func isEOF(tk Token) bool {
 	return tk.GetName() == EOF
 }
 
 func isSpecial(r rune) bool {
-	return ( r >= '!' && r <= '/' ) || ( r >= ':' && r <= '@' )
+	return (r >= '!' && r <= '/') || (r >= ':' && r <= '@')
 }
+
 //	readSpace reads a single whitespace - freeing it from the buffer.
 //	Frees rune from buffer until non-whitespace character found.
 func readSpace() bool {
