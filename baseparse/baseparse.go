@@ -78,6 +78,16 @@ func statementBuilder(n *node) *node {
 	case baselex.IF:
 		parent.child = append(parent.child, *ifBuilder(&node{}), *statementBuilder(&node{}))
 		return parent
+	case baselex.PRINT:
+		parent.child = append(parent.child, *printBuilder(&node{}))
+	}
+	return parent
+}
+
+func printBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	if !parent.Is(baselex.IDENTIFIER) {
+		panic("Expected identifier in PRINT statement")
 	}
 	return parent
 }
