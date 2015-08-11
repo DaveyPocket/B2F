@@ -42,6 +42,10 @@ const (
 	MUL
 	DIV
 	MOD
+	GREATERTHAN
+	LESSTHAN
+	GREATERTHANEQU
+	LESSTHANEQU
 
 	//	Expressives
 	QUOTE
@@ -93,6 +97,10 @@ var reservedTok = map[string]TokName{
 	"]":      CLOSESQUAREBRACKET,
 	"{":      OPENBRACKET,
 	"}":      CLOSEBRACKET,
+	">":		GREATERTHAN,
+	"<":		LESSTHAN,
+	">=":		GREATERTHANEQU,
+	"<=":		LESSTHANEQU,
 	"⾨":      THISGOESLAST,
 }
 
@@ -118,7 +126,7 @@ func (t Token) GetLexeme() string {
 }
 
 func (t Token) IsEOF() bool {
-	return t.name == EOF && t.val == ""
+	return t.name == EOF && t.lexeme == ""
 }
 
 // readNextChar reads a rune from the buffer and returns said rune.
@@ -191,7 +199,7 @@ func getNextLexeme(m []rune) string {
 		return string(r)
 	}
 
-	if isLetter(r) && r != '\n' && r != rune(0) {
+	if (isLetter(r) || isNumber(r)) && r != '\n' && r != rune(0) {
 		m = append(m, r)
 		return getNextLexeme(m)
 	}

@@ -6,22 +6,25 @@ import (
 		"fmt"
 		"io"
 		"bufio"
-		"os"
 )
 
-type symbol struct {
-	name string
-	init	int
+func nextToken() baselex.Token {
+	t := baselex.ReadToken()
+	fmt.Println(t)
+	return t
 }
 
-type table []symbol	//	Symbol table type
+type table []string
+var symbolTable table
 
-func (t *table) insert(name string, init int) {
-	t = append(t, symbol{name, init})
+func (t *table) insert(name string) {
+	for _, val := range *t {
+		if name == val {
+			return
+		}
+	}
+	*t = append(*t, name)
 }
-
-nextToken := baselex.ReadToken
-symbolTable := table
 
 type node struct {
 	token	baselex.Token	//	Could an interface go into here somehow?
@@ -32,67 +35,95 @@ func (n node) GetTokName() baselex.TokName {
 	return n.token.GetName()
 }
 
-type root []node		// Root node of the program
-
-type program struct {
-	*root			//	Root node
+func (n node) GetTokVal() string {
+	return n.token.GetLexeme()
 }
+
+type root []node		// Root node of the program
 
 func (n node) Is(name baselex.TokName) bool {
 	return name == n.GetTokName()
 }
 
-func Parse(r *bufio.Reader) *program {
-	baselex.SetReader(r)
-	instr, symTable := makeAST()
-	return &program{/*stuff in here*/}
-}
-
 //	Keep creating child node until we reach a newline character.
-func makeAST() *root, table {
-	p := &root{}
-	/*
-	for t := nextToken(), !t.IsEOF(); t = nextToken() {
-		switch t.GetName() {
-		case baselex.LET:
-		}
-	}*/
+func Parse(r io.Reader) (*root, table) {
+	program := &root{}
+	baselex.SetReader(bufio.NewReader(r))
+	for n := statementBuilder(&node{}); !n.Is(baselex.EOF); n = statementBuilder(&node{}) {
+		*program = append(*program, *n)
+	}
+	fmt.Println("Program: ", program)
+	fmt.Println("Table: ", symbolTable)
+	return program, symbolTable
 }
 
-func treeBuilder(n *node) node {
-	switch n {
-	case n.Is(baselex.LET):
-		return assignmentBuilder
+func statementBuilder(n *node) *node {
+	//	return n if none of the cases match, 
+	//	Commented thing in recursive function argument used to denote that function can be called with arbitrary input.
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.LET:
+		//	call statementBuilder and pass return value into temporary storage.
+		//	Check temporary store against conditions that are valid. Throw error if it does not work.
+		parent.child = append(parent.child, *statementBuilder(&node{}))
+		return parent
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return statementBuilder(parent)
+	case baselex.EQU:
+		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+	case baselex.FOR:
+		parent.child = append(parent.child, *forBuilder(&node{}), *statementBuilder(&node{}))
+		return parent
+	case baselex.IF:
+		parent.child = append(parent.child, *ifBuilder(&node{}), *statementBuilder(&node{}))
+		return parent
 	}
+	return parent
+}
+
+func forBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return forBuilder(n)
+	case baselex.EQU:
+		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+		return parent
+	}
+	return n
+}
+
+func ifBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return ifBuilder(n)
+	case baselex.GREATERTHAN: //	Add more
+	}
+	return parent
 }
 
 //	IsKeyword
 func assignmentBuilder(n *node) *node {
 	parent:= &node{token: nextToken()}
 	switch parent.GetTokName() {
-	/*case n.Is(baselex.LET):
-		panic("Found keyword LET, expected named type literal.")
-	case n.Is(baselex.GOTO):
-		panic("Found keyword GOTO, expecred named type literal.")*/
 	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
 		return assignmentBuilder(parent)
-	case baselex.EQU:
+	case baselex.ADD, baselex.SUB, baselex.MUL, baselex.DIV, baselex.MOD, baselex.TO:
 		//	Root node is assignment operator.
-		parent.child = append(parent.child, n, assignmentBuilder(n))
+		parent.child = append(parent.child, *n, *assignmentBuilder(n))
 		//	The code below should only work if the right child is a constant number.
-		symbolTable.insert(parent.child[0].GetTokVal(), parent.child[1].GetTokVal())
-		return root
+		symbolTable.insert(parent.child[0].GetTokVal())
+		return parent
+	case baselex.NEWLINE:
+		return parent
+	default:
+		str := "Expected Identifier or Expression, found " + parent.GetTokVal() + " instead."
+		panic(str)
 	}
-	return root
+	return parent
 }
-
-func (p parser) buildTree() (*Program) {
-	prg := &Program{}
-	*prg = append(*prg, p.getLines()...)
-	if !getDelim(*prg).isEOF() && !getDelim(*prg).isEnd() {
-		fmt.Println("Expected <EOF>, found", getDelim(*prg).tok.GetVal(), "instead.")
-		os.Exit(1)
-	}
-	return prg
-}
-

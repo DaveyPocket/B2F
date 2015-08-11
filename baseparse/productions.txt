@@ -1,0 +1,6 @@
+Statement -> Assignment | ControlStructure |
+Assignment -> Identifier = Expression
+Expression -> Expression Operator Expression | Identifier
+Operator -> + | - | * | / | %
+ControlStructure -> IfStatement | ForStatement
+IfStatement -> 
