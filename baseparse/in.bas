@@ -8,8 +8,3 @@ next it
 next a
 
 end
-
-
-myFunc:
-//doAThing
-return

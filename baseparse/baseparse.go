@@ -18,61 +18,10 @@ func nextToken() baselex.Token {
 type table []string
 var symbolTable table
 
-<<<<<<< HEAD
-//	GetStatements
-func (p parser) getLines() (lines []node) {
-	m := p.treeBuilder(&node{}) // Get a node from the treeBuilder
-	for ; !m.isDelim(); m = p.treeBuilder(&node{}) {
-		lines = append(lines, *m)
-	}
-	lines = append(lines, *m)
-	return
-}
-
-func (p parser) buildTree() (*Program) {
-	prg := &Program{}
-	*prg = append(*prg, p.getLines()...)
-	if !getDelim(*prg).isEOF() && !getDelim(*prg).isEnd() {
-		fmt.Println("Expected <EOF>, found", getDelim(*prg).tok.GetVal(), "instead.")
-		os.Exit(1)
-	}
-	return prg
-}
-
-func (p parser) treeBuilder(n *node) (*node) {
-	t := p.scan()
-	fmt.Println(t)
-	root := &node{tok: t}
-	switch t.GetName() {
-	case baselex.StringToName("IDENTIFIER"):
-		n = p.treeBuilder(root)
-	case baselex.StringToName("="):
-		// Desired root node
-		root.children = append(root.children, *n, *p.assignmentBuilder(root))
-		p.symbol = append(p.symbol, symbol{root.children[0].tok.GetVal(), root.children[1].tok.GetVal()})
-		return root
-	case baselex.StringToName("LET"):
-		root.children = append(root.children, *p.treeBuilder(root))
-		return root
-	case baselex.StringToName("PRINT"):
-		root.children = append(root.children, *p.treeBuilder(root))
-		if root.children[0].tok.GetName() == baselex.StringToName("=") {
-			fmt.Println("Assignment not allowed in PRINT statement.")
-			os.Exit(1)
-		}
-		return root
-	case baselex.StringToName("FOR"):
-		root.children = append(root.children, *p.treeBuilder(root))	//	Append conditional to leftmost branch
-		root.children = append(root.children, p.getLines()...) // Append statements to not-leftmost branch
-		if !getDelim(root.children).isNext() {
-			fmt.Println("Expected NEXT, found", getDelim(root.children).tok.GetVal(), "instead.")
-			os.Exit(1)
-=======
 func (t *table) insert(name string) {
 	for _, val := range *t {
 		if name == val {
 			return
->>>>>>> newParse
 		}
 	}
 	*t = append(*t, name)
@@ -180,8 +129,6 @@ func assignmentBuilder(n *node) *node {
 		parent.child = append(parent.child, *n, *assignmentBuilder(n))
 		//	The code below should only work if the right child is a constant number.
 		symbolTable.insert(parent.child[0].GetTokVal())
-		return parent
-	case baselex.NEWLINE:
 		return parent
 	default:
 		str := "Expected Identifier or Expression, found " + parent.GetTokVal() + " instead."
