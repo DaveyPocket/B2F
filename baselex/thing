@@ -1,0 +1,2 @@
+baselex.SetReader(someReader)
+t := baselex.ReadToken()

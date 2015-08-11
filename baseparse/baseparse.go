@@ -7,17 +7,18 @@ import (
 		"fmt"
 		"io"
 		"bufio"
-		"os"
 )
 
-func (p parser) scan() (baselex.Token) {
-	return p.lex.ScanToken()
+func nextToken() baselex.Token {
+	t := baselex.ReadToken()
+	fmt.Println(t)
+	return t
 }
 
-func getDelim(n []node) (node) {
-	return n[len(n) - 1]
-}
+type table []string
+var symbolTable table
 
+<<<<<<< HEAD
 //	GetStatements
 func (p parser) getLines() (lines []node) {
 	m := p.treeBuilder(&node{}) // Get a node from the treeBuilder
@@ -66,155 +67,125 @@ func (p parser) treeBuilder(n *node) (*node) {
 		if !getDelim(root.children).isNext() {
 			fmt.Println("Expected NEXT, found", getDelim(root.children).tok.GetVal(), "instead.")
 			os.Exit(1)
+=======
+func (t *table) insert(name string) {
+	for _, val := range *t {
+		if name == val {
+			return
+>>>>>>> newParse
 		}
-		return root
-	case baselex.StringToName("IF"):
-		root.children = append(root.children, *p.treeBuilder(root))
-		root.children = append(root.children, p.getLines()...)
-		if !getDelim(root.children).isElse() {
-			return root
-		}
-		root.children = append(root.children, p.getLines()...)
-		return root
-	case baselex.StringToName("THEN"):
-		return n
-	case baselex.StringToName("ELSE"):
-		return &node{tok: t}
-		//	Then/else are used as a delimiter to denote the end of a if clause.
-	case baselex.StringToName("ENDIF"):
-		//	Signals the end of an if statement
-		fallthrough
-	case baselex.StringToName("END"):
-		//return &node{tok: t}
-		fallthrough
-	case baselex.StringToName(""):
-		return &node{tok: t}
-	case baselex.StringToName("NEXT"):
-		root.children = append(root.children, *p.treeBuilder(root))
-		return root
 	}
-	fmt.Println("End of switch block....")
-	return n
-}
-
-func (p parser) assignmentBuilder(n *node) (*node) {
-	m := n
-	t := p.scan()
-	fmt.Println(t)
-	switch t.GetName() {
-	case baselex.StringToName("IDENTIFIER"):
-		m = p.assignmentBuilder(&node{tok: t})
-	case baselex.StringToName("+"), baselex.StringToName("-"), baselex.StringToName("*"), baselex.StringToName("/"), baselex.StringToName("TO"):
-		// Desired root node
-		root := &node{tok: t}
-		root.children = append(root.children, *n, *p.assignmentBuilder(root))
-		return root
-	case baselex.StringToName("="):
-		panic("Double assignment")
-	}
-	return m
-}
-
-func Parse(r io.Reader) (*Program) {
-	p := &parser{lex: baselex.NewLex(bufio.NewReader(r))}
-	// Loop through multiple branches to build program
-	p.prog = p.buildTree()
-	fmt.Println("Program:", *p.prog)
-	return p.prog
-}
-
-type symbol struct {
-	name	string
-	value	interface{}
-}
-
-func (s symbol) GetVal() (interface{}) {
-	return s.value
-}
-
-func (s symbol) GetName() (string) {
-	return s.name
-}
-
-type parser struct {
-	lex *baselex.Lex
-	//	some root node for AST
-	//	Current token to do things to?
-	//	First - What does the structure of a node look like?
-	prog *Program
-	symbol []symbol
+	*t = append(*t, name)
 }
 
 type node struct {
-	//	Node contain
-	tok	baselex.Token	//	Could an interface go into here somehow?
-	children	[]node
+	token	baselex.Token	//	Could an interface go into here somehow?
+	child	[]node
 }
 
-func (n node) isEOF() (bool) {
-	return n.tok.GetName() == baselex.StringToName("")
+func (n node) GetTokName() baselex.TokName {
+	return n.token.GetName()
 }
 
-func (n node) isNext() (bool) {
-	return n.tok.GetName() == baselex.StringToName("NEXT")
+func (n node) GetTokVal() string {
+	return n.token.GetLexeme()
 }
 
-func (n node) isEndIf() (bool) {
-	return n.tok.GetName() == baselex.StringToName("ENDIF")
+type root []node		// Root node of the program
+
+func (n node) Is(name baselex.TokName) bool {
+	return name == n.GetTokName()
 }
 
-func (n node) isEnd() (bool) {
-	return n.tok.GetName() == baselex.StringToName("END")
+//	Keep creating child node until we reach a newline character.
+func Parse(r io.Reader) (*root, table) {
+	program := &root{}
+	baselex.SetReader(bufio.NewReader(r))
+	for n := statementBuilder(&node{}); !n.Is(baselex.EOF); n = statementBuilder(&node{}) {
+		*program = append(*program, *n)
+	}
+	fmt.Println("Program: ", program)
+	fmt.Println("Table: ", symbolTable)
+	return program, symbolTable
 }
 
-func (n node) isThen() (bool) {
-	return n.tok.GetName() == baselex.StringToName("THEN")
+func statementBuilder(n *node) *node {
+	//	return n if none of the cases match, 
+	//	Commented thing in recursive function argument used to denote that function can be called with arbitrary input.
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.LET:
+		//	call statementBuilder and pass return value into temporary storage.
+		//	Check temporary store against conditions that are valid. Throw error if it does not work.
+		parent.child = append(parent.child, *statementBuilder(&node{}))
+		return parent
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return statementBuilder(parent)
+	case baselex.EQU:
+		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+	case baselex.FOR:
+		parent.child = append(parent.child, *forBuilder(&node{}), *statementBuilder(&node{}))
+		return parent
+	case baselex.IF:
+		parent.child = append(parent.child, *ifBuilder(&node{}), *statementBuilder(&node{}))
+		return parent
+	case baselex.PRINT:
+		parent.child = append(parent.child, *printBuilder(&node{}))
+	}
+	return parent
 }
 
-func (n node) isElse() (bool) {
-	return n.tok.GetName() == baselex.StringToName("ELSE")
+func printBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	if !parent.Is(baselex.IDENTIFIER) {
+		panic("Expected identifier in PRINT statement")
+	}
+	return parent
 }
 
-func (n node) isNewline() (bool) {
-	return n.tok.GetName() == baselex.StringToName("\n")
+func forBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return forBuilder(n)
+	case baselex.EQU:
+		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+		return parent
+	}
+	return n
 }
 
-func (n node) isDelim() (bool) {
-	return n.isEndIf() || n.isEOF() || n.isNext() || n.isEnd() || n.isThen() || n.isElse() || n.isNewline()
+func ifBuilder(n *node) *node {
+	parent := &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return ifBuilder(n)
+	case baselex.GREATERTHAN: //	Add more
+	}
+	return parent
 }
 
-type Program []node	// Root node of the program
-
-//	GetVariables traverses the program tree and returns the number
-// of variables found in the program along with a slice of pointers
-//	to nodes
-//	corresponding to the order in which they appear in the program.
-func (p *Program) GetSymTable() (int, []symbol) {
-	return len(p.symbol), p.symbol
+//	IsKeyword
+func assignmentBuilder(n *node) *node {
+	parent:= &node{token: nextToken()}
+	switch parent.GetTokName() {
+	case baselex.IDENTIFIER:
+		symbolTable.insert(parent.GetTokVal())
+		return assignmentBuilder(parent)
+	case baselex.ADD, baselex.SUB, baselex.MUL, baselex.DIV, baselex.MOD, baselex.TO:
+		//	Root node is assignment operator.
+		parent.child = append(parent.child, *n, *assignmentBuilder(n))
+		//	The code below should only work if the right child is a constant number.
+		symbolTable.insert(parent.child[0].GetTokVal())
+		return parent
+	case baselex.NEWLINE:
+		return parent
+	default:
+		str := "Expected Identifier or Expression, found " + parent.GetTokVal() + " instead."
+		panic(str)
+	}
+	return parent
 }
-
-func isVar(n node) (bool) {
-	return n.tok.GetName() == baselex.StringToName("LET")
-}
-
-func (n node) GetTokVal() (string) {
-	return n.tok.GetVal()
-}
-
-func (n node) GetChild(i int) (node) {
-	return n.children[i]
-}
-
-//	Recursive Variable finder
-//	What constitutes a variable?
-//		Any literal on the left-hand side of an assignment...
-//		Any literal on the left-hand side of an assignment in a for loop
-
-//	What goes into the variable?
-
-
-/* TODO
-Symbol table.
-Second-pass to create detailed tokens (token values reflect type)
-
-*/
