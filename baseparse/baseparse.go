@@ -32,6 +32,10 @@ type node struct {
 	child	[]node
 }
 
+func (n node) GetChild(index int) node {
+	return n.child[index]
+}
+
 func (n node) GetTokName() baselex.TokName {
 	return n.token.GetName()
 }

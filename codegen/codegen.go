@@ -2,131 +2,117 @@
 //	No need to keep initial value in the symbol table.
 /* Notes
 DO NOT manually keep track of memory pointer. Let the Code Generator perform those operations.
+Reading from locations in memory!
+
 */
 package codegen
 
 import (
-	//"b2f/baselex"
+	"b2f/baselex"
 	"b2f/baseparse"
 	"fmt"
-	"io"
-	//"bufio"
+//	"io"
 )
 
-//	Named variable type
-type varType struct {
-	name     string
+type stackType []int
+
+func (s *stackType) push(n int) {
+	*s = append(*s, n)
+}
+
+func (s stackType) peek() int {
+	n := s[len(s)-1]
+	fmt.Println(n)
+	return n
+}
+
+func (s *stackType) pop() int {
+	q := *s
+	n := q[len(q)-1]
+	q = q[:len(q)-1]
+	*s = q
+	return n
+}
+
+type byteType struct {
 	location int
-	value    interface{} //SHOULD ONLY BE USED IN THE INITVAR FUNCTION
+	locationPrime int
 }
 
-//	Conditional Type
-type condType struct {
-}
-
-type forType struct {
-}
-
-//	No need for a bookshelf type
-//	There only needs to exist one code generator a moment in time.
-type bookShelf struct {
-	AST          *baseparse.Program
-	Pointer      int
-	DynamicStart int
-	varTable     []varType
-	program      string
-}
-
-func MakeProgram(r io.Reader) string {
-	b := &bookShelf{}
-	b.AST = baseparse.Parse(r)
-	b.makeStaticRegion()
-	return b.program
-}
-
-func (b *bookShelf) makeStaticRegion() {
-	c, n := b.AST.GetSymTable()
-	fmt.Println(c)
-	for _, v := range n {
-		b.initVar(varType{name: v.GetName(), value: v.GetVal()})
-	}
-}
-
-func (b *bookShelf) initVar(n varType) {
-	n.location = b.Pointer
-	b.varTable = append(b.varTable, n)
-	b.program += b.assignGen(n.value)
-}
-
-func (b *bookShelf) assignGen(val int) string {
-	b.Pointer = b.DynamicStart // May be redundant because of recursive call
-	if val > 0 {
-		assign := "+"
-		assign += b.assignGen(val - 1)
-		return assign
-	}
-	b.DynamicStart += 2
-	//	b.Pointer += 2
-	return "\n>>\n"
-}
-
-func addGen(aVar, bVar varType) string {
-	//	Generate correct number of '<' or '>' based on current pointer position - aLoc
-	//	Loop generator
-	//out := countGen(aVar
-	return ""
-}
-
-func (b *bookShelf) countGen(varToCount varType, body string) string {
-	//	TODO (Brad): replacement body parameter with something else...
-	//	... Not quite sure what yet... Not good.
-	//	Also, optimize by utilizing secondary loop
-	loop := b.moveTo(varToCount)
-	loop += "[->+<\n" //	Start of a loop
-	loop += body
-	loop += "]\n[>-<+\n]\n"
-	return loop
-}
-
-func (b *bookShelf) moveTo(v varType) string {
-	b.Pointer = v.location
-	return moveGen(v.location - b.Pointer)
-}
-
-func moveGen(r int) string {
-	if r > 0 {
-		inc := ">"
-		inc += moveGen(r - 1)
-		return inc
-	} else if r < 0 {
-		dec := "<"
-		dec += moveGen(r + 1)
-		return dec
-	}
-	return "\n"
-}
-
-//	Should be duplicate generator
-func (b *bookShelf) duplicate(source, destination varType) (out string) {
-}
-
-func (b *bookshelf) printGen(t interface{}) string {
-	switch t.(type) {
-	case varType:
-		switch t.value.(type){
-		case int:
-		}
-	}
-	//	ASCII character code offset for integer type, (Modulo for digits)
-	//	String literals - stack style
-	//	Type switch
-}
-
+//	codegen package acts as a VM for BF.
+var bfPointer int      //	Pointer to current location in memory.
+var bfStackPointer int //	Pointer to top of a stack
+var vmStack stackType  //	Stack
+var output string      //	Output BF program.
 /*
-Generate members for different types
-Type variable has generator function.
---Generator takes no arguments and only returns string code
---Generator function knows variable value
+func _g_MoveTo() {
+}
+
+func g_Add(lVal, rVal, store byteType) {
+	
+}
+
+func g_Sub() {
+}
+
+func g_Div() {
+}
+
+func g_Mul() {
+}
+
+func g_Print() {
+}
 */
 
-//	Generator interface????
+//lVal, rVal, result are all locations
+func add(lVal, rVal, result int) {
+	//	This function makes the assumption that lVal, rVal, and result all contain complementary locations immediately to the right.
+	output += moveTo(bfPointer, lVal) + "[->+<"
+	//	bfPointer is still at lVal.
+	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, lVal) + "]"
+	output += ">[-<+>]"	//	Restore lVal.
+	output += moveTo(bfPointer, rVal) + "[->+<"
+	//	bfPointer is still at lVal.
+	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, rVal) + "]"
+	output += ">[-<+>]"	//	Restore rVal.
+}
+
+//	TODO (Brad) - Remove 'from' statement. Always from bfPointer.
+func moveTo(from, to int) (out string) {
+	bfPointer = to
+	n := to - from
+	if n > 0 {
+		for i := 0; i < n; i++ {
+			out += ">"
+		}
+	} else if n < 0 {
+		for i := 0; i < -n; i++ {
+			out += "<"
+		}
+	}
+	return
+}
+
+//	Change this
+//func thing(n node) {
+//	switch n.GetTokName() {
+//	case baselex.PRINT:
+//		g_Print( /*Zeroth child*/ )
+//	}
+//}
+//	Organize symbol table function
+//		Constants have 'constant' type, no location
+
+//	End-all function
+
+func Compile(r io.Reader) (bf string, cErr error) {
+	program, symbolTable := baseparse.Parse(r)
+	for _, v := range *program {
+		switch v.GetTokName() {
+		case baselex.ADD:
+			//v.GetChild(0) 
+		}
+	}
+	return
+}
