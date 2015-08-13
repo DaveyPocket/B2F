@@ -15,10 +15,10 @@ func nextToken() baselex.Token {
 	return t
 }
 
-type table []string
-var symbolTable table
+type Table []string
+var symbolTable Table
 
-func (t *table) insert(name string) {
+func (t *Table) insert(name string) {
 	for _, val := range *t {
 		if name == val {
 			return
@@ -27,34 +27,34 @@ func (t *table) insert(name string) {
 	*t = append(*t, name)
 }
 
-type node struct {
+type Node struct {
 	token	baselex.Token	//	Could an interface go into here somehow?
-	child	[]node
+	child	[]Node
 }
 
-func (n node) GetChild(index int) node {
+func (n Node) GetChild(index int) Node {
 	return n.child[index]
 }
 
-func (n node) GetTokName() baselex.TokName {
+func (n Node) GetTokName() baselex.TokName {
 	return n.token.GetName()
 }
 
-func (n node) GetTokVal() string {
+func (n Node) GetTokVal() string {
 	return n.token.GetLexeme()
 }
 
-type root []node		// Root node of the program
+type root []Node		// Root node of the program
 
-func (n node) Is(name baselex.TokName) bool {
+func (n Node) Is(name baselex.TokName) bool {
 	return name == n.GetTokName()
 }
 
 //	Keep creating child node until we reach a newline character.
-func Parse(r io.Reader) (*root, table) {
+func Parse(r io.Reader) (*root, Table) {
 	program := &root{}
 	baselex.SetReader(bufio.NewReader(r))
-	for n := statementBuilder(&node{}); !n.Is(baselex.EOF); n = statementBuilder(&node{}) {
+	for n := statementBuilder(&Node{}); !n.Is(baselex.EOF); n = statementBuilder(&Node{}) {
 		*program = append(*program, *n)
 	}
 	fmt.Println("Program: ", program)
@@ -62,56 +62,56 @@ func Parse(r io.Reader) (*root, table) {
 	return program, symbolTable
 }
 
-func statementBuilder(n *node) *node {
+func statementBuilder(n *Node) *Node {
 	//	return n if none of the cases match, 
 	//	Commented thing in recursive function argument used to denote that function can be called with arbitrary input.
-	parent := &node{token: nextToken()}
+	parent := &Node{token: nextToken()}
 	switch parent.GetTokName() {
 	case baselex.LET:
 		//	call statementBuilder and pass return value into temporary storage.
 		//	Check temporary store against conditions that are valid. Throw error if it does not work.
-		parent.child = append(parent.child, *statementBuilder(&node{}))
+		parent.child = append(parent.child, *statementBuilder(&Node{}))
 		return parent
 	case baselex.IDENTIFIER:
 		symbolTable.insert(parent.GetTokVal())
 		return statementBuilder(parent)
 	case baselex.EQU:
-		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+		parent.child = append(parent.child, *n, *assignmentBuilder(&Node{}))
 	case baselex.FOR:
-		parent.child = append(parent.child, *forBuilder(&node{}), *statementBuilder(&node{}))
+		parent.child = append(parent.child, *forBuilder(&Node{}), *statementBuilder(&Node{}))
 		return parent
 	case baselex.IF:
-		parent.child = append(parent.child, *ifBuilder(&node{}), *statementBuilder(&node{}))
+		parent.child = append(parent.child, *ifBuilder(&Node{}), *statementBuilder(&Node{}))
 		return parent
 	case baselex.PRINT:
-		parent.child = append(parent.child, *printBuilder(&node{}))
+		parent.child = append(parent.child, *printBuilder(&Node{}))
 	}
 	return parent
 }
 
-func printBuilder(n *node) *node {
-	parent := &node{token: nextToken()}
+func printBuilder(n *Node) *Node {
+	parent := &Node{token: nextToken()}
 	if !parent.Is(baselex.IDENTIFIER) {
 		panic("Expected identifier in PRINT statement")
 	}
 	return parent
 }
 
-func forBuilder(n *node) *node {
-	parent := &node{token: nextToken()}
+func forBuilder(n *Node) *Node {
+	parent := &Node{token: nextToken()}
 	switch parent.GetTokName() {
 	case baselex.IDENTIFIER:
 		symbolTable.insert(parent.GetTokVal())
 		return forBuilder(n)
 	case baselex.EQU:
-		parent.child = append(parent.child, *n, *assignmentBuilder(&node{}))
+		parent.child = append(parent.child, *n, *assignmentBuilder(&Node{}))
 		return parent
 	}
 	return n
 }
 
-func ifBuilder(n *node) *node {
-	parent := &node{token: nextToken()}
+func ifBuilder(n *Node) *Node {
+	parent := &Node{token: nextToken()}
 	switch parent.GetTokName() {
 	case baselex.IDENTIFIER:
 		symbolTable.insert(parent.GetTokVal())
@@ -122,8 +122,8 @@ func ifBuilder(n *node) *node {
 }
 
 //	IsKeyword
-func assignmentBuilder(n *node) *node {
-	parent:= &node{token: nextToken()}
+func assignmentBuilder(n *Node) *Node {
+	parent := &Node{token: nextToken()}
 	switch parent.GetTokName() {
 	case baselex.IDENTIFIER:
 		symbolTable.insert(parent.GetTokVal())
@@ -134,9 +134,9 @@ func assignmentBuilder(n *node) *node {
 		//	The code below should only work if the right child is a constant number.
 		symbolTable.insert(parent.child[0].GetTokVal())
 		return parent
-	default:
-		str := "Expected Identifier or Expression, found " + parent.GetTokVal() + " instead."
-		panic(str)
+//	default:
+//		str := "Expected Identifier or Expression, found " + parent.GetTokVal() + " instead."
+//		panic(str)
 	}
-	return parent
+	return n
 }

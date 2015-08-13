@@ -3,6 +3,7 @@
 /* Notes
 DO NOT manually keep track of memory pointer. Let the Code Generator perform those operations.
 Reading from locations in memory!
+When typing literal pointer increments and decrments, make sure bfPointer matches location.
 
 */
 package codegen
@@ -11,10 +12,11 @@ import (
 	"b2f/baselex"
 	"b2f/baseparse"
 	"fmt"
-//	"io"
+	"io"
 )
 
 type stackType []int
+var symbolTable baseparse.Table
 
 func (s *stackType) push(n int) {
 	*s = append(*s, n)
@@ -67,15 +69,17 @@ func g_Print() {
 
 //lVal, rVal, result are all locations
 func add(lVal, rVal, result int) {
+	fmt.Println(lVal, rVal, result)
 	//	This function makes the assumption that lVal, rVal, and result all contain complementary locations immediately to the right.
 	output += moveTo(bfPointer, lVal) + "[->+<"
 	//	bfPointer is still at lVal.
 	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, lVal) + "]"
-	output += ">[-<+>]"	//	Restore lVal.
+	output += ">[-<+>]<"	//	Restore lVal.
 	output += moveTo(bfPointer, rVal) + "[->+<"
 	//	bfPointer is still at lVal.
 	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, rVal) + "]"
-	output += ">[-<+>]"	//	Restore rVal.
+	output += ">[-<+>]<"	//	Restore rVal.
+	output += moveTo(bfPointer, result)
 }
 
 //	TODO (Brad) - Remove 'from' statement. Always from bfPointer.
@@ -104,15 +108,39 @@ func moveTo(from, to int) (out string) {
 //	Organize symbol table function
 //		Constants have 'constant' type, no location
 
+func organizeTable() {
+	//for i, v := range symbolTable {
+
+	//}
+}
+
+func getLocation(n baseparse.Node) int {
+	for i, val := range symbolTable {
+		fmt.Println(val, i, n.GetTokVal())
+		if n.GetTokVal() == val {
+		fmt.Println(val, i)
+			return i * 2
+		}
+	}
+	return -1
+}
+
 //	End-all function
 
 func Compile(r io.Reader) (bf string, cErr error) {
-	program, symbolTable := baseparse.Parse(r)
+	output = ""
+	bfPointer = 0
+	program, n := baseparse.Parse(r)
+	symbolTable = n
 	for _, v := range *program {
 		switch v.GetTokName() {
-		case baselex.ADD:
-			//v.GetChild(0) 
+		case baselex.EQU:
+			switch v.GetChild(1).GetTokName() {
+			case baselex.ADD:
+				add(getLocation(v.GetChild(1).GetChild(0)), getLocation(v.GetChild(1).GetChild(1)), getLocation(v.GetChild(0)))
+			}
 		}
 	}
+	bf = output
 	return
 }
