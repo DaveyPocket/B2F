@@ -13,6 +13,7 @@ import (
 	"b2f/baseparse"
 	"fmt"
 	"io"
+	"strconv"
 )
 
 type stackType []int
@@ -67,19 +68,38 @@ func g_Print() {
 }
 */
 
+//	TODO (Brad) - Add constant value assignment.
 //lVal, rVal, result are all locations
-func add(lVal, rVal, result int) {
-	fmt.Println(lVal, rVal, result)
-	//	This function makes the assumption that lVal, rVal, and result all contain complementary locations immediately to the right.
-	output += moveTo(bfPointer, lVal) + "[->+<"
-	//	bfPointer is still at lVal.
-	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, lVal) + "]"
-	output += ">[-<+>]<"	//	Restore lVal.
-	output += moveTo(bfPointer, rVal) + "[->+<"
-	//	bfPointer is still at lVal.
-	output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, rVal) + "]"
-	output += ">[-<+>]<"	//	Restore rVal.
+func add(lVal, rVal interface{}, result int) {
+	switch l := lVal.(type){
+	case int:	//	Soon to be byteType
+		fmt.Println(l, rVal, result)
+		//	This function makes the assumption that lVal, rVal, and result all contain complementary locations immediately to the right.
+		output += moveTo(bfPointer, l) + "[->+<"
+		//	bfPointer is still at lVal.
+		output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, l) + "]"
+		output += ">[-<+>]<"	//	Restore lVal.
+	case byte:
+		output += moveTo(bfPointer, result) + constant(l)
+	}
+
+	switch r := rVal.(type){
+	case int:	//	Soon to be byteType
+		output += moveTo(bfPointer, r) + "[->+<"
+		//	bfPointer is still at lVal.
+		output += moveTo(bfPointer, result) + "+" + moveTo(bfPointer, r) + "]"
+		output += ">[-<+>]<"	//	Restore rVal.
+	case byte:
+		output += moveTo(bfPointer, result) + constant(r)
+	}
 	output += moveTo(bfPointer, result)
+}
+
+func constant(val byte) (out string) {
+	for i := byte(0); i < val; i++ {
+		out += "+"
+	}
+	return
 }
 
 //	TODO (Brad) - Remove 'from' statement. Always from bfPointer.
@@ -131,9 +151,18 @@ func Compile(r io.Reader) (bf string, cErr error) {
 	output = ""
 	bfPointer = 0
 	program, n := baseparse.Parse(r)
+	program.PPrint()
 	symbolTable = n
 	for _, v := range *program {
 		switch v.GetTokName() {
+		case baselex.LET:
+			equ := v.GetChild(0)
+			//	Using number 10 as rVal for temporary 
+			t, err := strconv.Atoi(equ.GetChild(1).GetTokVal())
+			if err != nil {
+				panic(err)
+			}
+			add(byte(t), byte(0), getLocation(equ.GetChild(0)))
 		case baselex.EQU:
 			switch v.GetChild(1).GetTokName() {
 			case baselex.ADD:

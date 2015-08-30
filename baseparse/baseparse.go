@@ -46,6 +46,28 @@ func (n Node) GetTokVal() string {
 
 type root []Node		// Root node of the program
 
+func (r root) PPrint() {
+	fmt.Println("Program")
+	for _, n := range r {
+		printNode(n, 0)
+	}
+	fmt.Println("End Program")
+}
+
+func printNode(n Node, d int) {
+	for i := d; i > 0; i-- {
+		fmt.Print("-")
+	}
+	fmt.Print("-")
+	fmt.Println(n.GetTokVal())
+	if len(n.child) > 0 {
+		d++
+		for _, c := range n.child {
+			printNode(c, d)
+		}
+	}
+}
+
 func (n Node) Is(name baselex.TokName) bool {
 	return name == n.GetTokName()
 }
@@ -55,7 +77,9 @@ func Parse(r io.Reader) (*root, Table) {
 	program := &root{}
 	baselex.SetReader(bufio.NewReader(r))
 	for n := statementBuilder(&Node{}); !n.Is(baselex.EOF); n = statementBuilder(&Node{}) {
-		*program = append(*program, *n)
+		if n.GetTokName() != baselex.NEWLINE {
+			*program = append(*program, *n)
+		}
 	}
 	fmt.Println("Program: ", program)
 	fmt.Println("Table: ", symbolTable)
@@ -85,6 +109,8 @@ func statementBuilder(n *Node) *Node {
 		return parent
 	case baselex.PRINT:
 		parent.child = append(parent.child, *printBuilder(&Node{}))
+	case baselex.NEXT:
+		parent.child = append(parent.child, Node{token: nextToken()})
 	}
 	return parent
 }
@@ -102,7 +128,7 @@ func forBuilder(n *Node) *Node {
 	switch parent.GetTokName() {
 	case baselex.IDENTIFIER:
 		symbolTable.insert(parent.GetTokVal())
-		return forBuilder(n)
+		return forBuilder(parent)
 	case baselex.EQU:
 		parent.child = append(parent.child, *n, *assignmentBuilder(&Node{}))
 		return parent

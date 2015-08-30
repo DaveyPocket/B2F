@@ -12,7 +12,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestCompile(t *testing.T) {
-	f, err := os.Open("in.bas")
+	f, err := os.Open("evenmore.bas")
 	if err != nil {
 		panic(err)
 	}
